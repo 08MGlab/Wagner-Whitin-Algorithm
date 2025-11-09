@@ -18,14 +18,13 @@ Implementación en Python del algoritmo Wagner-Whitin para la solución óptima 
 
 Resolver el problema clásico de gestión de inventarios donde la demanda varía entre periodos, minimizando los costos totales de setup y mantenimiento de inventario a lo largo de un horizonte finito de planificación.
 ## 🏗️ Estructura del Proyecto
-Wagner-Whitin-Algorithm/
-│
-├── 📄 articulo.pdf # Artículo completo del algoritmo
-├── 📝 articulo.tex # Código LaTeX del artículo
-├── 🔧 wagner_whitin.py # Implementación del algoritmo
-├── 📊 ejemplos/ # Ejemplos numéricos y pruebas
-├── 📚 referencias/ # Bibliografía y recursos
-└── 📖 README.md # Este archivo
+Wagner-Whitin-Algorithm (main)
+📄 articulo.pdf # Artículo completo del algoritmo
+📝 articulo.tex # Código LaTeX del artículo
+🔧 wagner_whitin.py # Implementación del algoritmo
+📊 ejemplos/ # Ejemplos numéricos y pruebas
+📚 referencias/ # Bibliografía y recursos
+📖 README.md # Este archivo
 🎓 Aportes Académicos
 Este trabajo contribuye con:
 
@@ -51,8 +50,6 @@ Martin Rojas Medrano
 🎓 Estudiante de Matemática - Universidad Nacional de Ingeniería (Lima, Perú)
 
 https://img.shields.io/badge/Email-martin.rojas.m@uni.pe-red?style=flat&logo=gmail
-https://img.shields.io/badge/LinkedIn-Martin_Rojas-blue?style=flat&logo=linkedin
-
 📄 Licencia
 Este proyecto está bajo la Licencia Creative Commons Attribution-NonCommercial 4.0 International.
 
