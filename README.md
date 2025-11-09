@@ -17,6 +17,3 @@ Implementación en Python del algoritmo Wagner-Whitin para la solución óptima 
 ## 🎯 Objetivo
 
 Resolver el problema clásico de gestión de inventarios donde la demanda varía entre periodos, minimizando los costos totales de setup y mantenimiento de inventario a lo largo de un horizonte finito de planificación.
-
-## 🏗️ Estructura del Proyecto
-
