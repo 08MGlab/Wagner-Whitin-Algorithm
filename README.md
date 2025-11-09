@@ -44,7 +44,7 @@ Este trabajo contribuye con:
 Martin Rojas Medrano
 🎓 Estudiante de Matemática - Universidad Nacional de Ingeniería (Lima, Perú)
 
-https://img.shields.io/badge/Email-martin.rojas.m@uni.pe-red?style=flat&logo=gmail
+martin.rojas.m@uni.pe
 ## 📄 Licencia
 Este proyecto está bajo la Licencia Creative Commons Attribution-NonCommercial 4.0 International.
 
