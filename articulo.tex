@@ -1,0 +1,374 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{hyperref}
+\usepackage{multirow}
+
+\title{Algoritmo Wagner-Whitin: Modelo Dinámico de Dimensionamiento de Lotes}
+\author{Martin Rojas Medrano}
+\date{\today}
+
+\newtheorem{theorem}{Teorema}
+\newtheorem{lemma}{Lema}
+\newtheorem{definition}{Definición}
+\newtheorem{corollary}{Corolario}
+\newtheorem{proposition}{Proposición}
+\newtheorem{remark}{Observación}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Este artículo presenta una exposición exhaustiva del algoritmo Wagner-Whitin para la solución óptima del problema de dimensionamiento de lotes con demanda dinámica y determinística. Partiendo del artículo fundacional de Wagner y Whitin (1958), se desarrolla el marco teórico del modelo, se demuestran los teoremas fundamentales que sustentan el algoritmo, se describe el procedimiento computacional y se ilustra con ejemplos numéricos. El análisis revela la conexión entre la programación dinámica y la gestión de inventarios, destacando el concepto de horizonte de planificación como herramienta para reducir la complejidad computacional. Se incluyen definiciones formales de los conceptos clave y se discuten extensiones modernas del modelo.
+\end{abstract}
+
+\section{Introducción}
+El problema de dimensionamiento de lotes (\textit{lot sizing}) constituye uno de los problemas fundamentales en la gestión de inventarios. Mientras que el modelo económico clásico (\textit{Economic Order Quantity - EOQ}) supone una demanda constante a través del tiempo, en entornos reales la demanda frecuentemente exhibe variaciones significativas entre periodos. 
+
+El algoritmo Wagner-Whitin, introducido en 1958 por Harvey M. Wagner y Thomson M. Whitin, representa la primera solución óptima para el problema de dimensionamiento de lotes con demanda dinámica y determinística. Este algoritmo emplea programación dinámica para determinar cuándo y cuánto ordenar, minimizando los costes totales de setup y mantenimiento de inventario a lo largo de un horizonte finito de planificación.
+
+La relevancia del algoritmo persiste hasta la actualidad, sirviendo como base para numerosas extensiones que incorporan restricciones de capacidad, múltiples productos, y condiciones de incertidumbre. Este trabajo busca presentar una exposición integral del algoritmo, desde sus fundamentos teóricos hasta su implementación práctica.
+
+\section{Marco Teórico}
+
+\subsection{Fundamentos de Teoría de Inventarios}
+
+\begin{definition}[Sistema de Inventarios]
+Un sistema de inventarios consiste en los procesos de adquisición, almacenamiento y distribución de materiales, con el objetivo de garantizar la disponibilidad de productos mientras se minimizan los costos asociados.
+\end{definition}
+
+\begin{definition}[Costos Relevantes]
+En un sistema de inventarios, se consideran typically los siguientes costos:
+\begin{itemize}
+    \item \textbf{Costo de ordenar/setup} ($s_t$): Costo fijo incurrido al realizar un pedido o iniciar una producción
+    \item \textbf{Costo de mantener inventario} ($i_t$): Costo por unidad almacenada por periodo
+    \item \textbf{Costo de shortage} ($p_t$): Costo por unidad de demanda insatisfecha (no considerado en el modelo Wagner-Whitin clásico)
+\end{itemize}
+\end{definition}
+
+\begin{definition}[Modelo EOQ Clásico]
+El modelo de Cantidad Económica de Pedido supone demanda constante $D$, costo de ordenar $S$, costo de mantener $H$ por unidad por tiempo. 
+\newline
+El problema que resuelve el modelo EOQ consiste en encontrar la cantidad de pedido \( Q \) que minimice la función de costo total por unidad de tiempo:
+
+\[
+TC(Q) = \frac{DS}{Q} + \frac{HQ}{2}
+\]
+
+donde el primer término representa el costo total de ordenar y el segundo término el costo total de mantener inventario.
+
+La solución óptima a este problema está dada por:
+
+\[
+Q^* = \sqrt{\frac{2DS}{H}}
+\tag{1}
+\]
+
+que produce un costo total mínimo por unidad de tiempo:
+
+\[
+TC^* = \sqrt{2DSH}
+\tag{2}
+\]
+
+Sin embargo, el modelo EOQ resulta inadecuado cuando la demanda varía significativamente entre periodos, lo que motiva el desarrollo de modelos dinámicos como el de Wagner-Whitin.
+\subsection{Programación Dinámica}
+
+El algoritmo Wagner-Whitin se fundamenta en la programación dinámica, técnica desarrollada por Richard Bellman.
+
+\begin{definition}[Principio de Optimalidad de Bellman]
+``Una política óptima tiene la propiedad de que, cualesquiera que sean el estado inicial y la decisión inicial, las decisiones restantes deben constituir una política óptima con respecto al estado resultante de la primera decisión.''
+\end{definition}
+
+\begin{definition}
+(Problema de Optimización en Etapas). Un problema de optimización en etapas (o de programación dinámica) consiste en encontrar una secuencia de decisiones óptimas a lo largo de un horizonte finito de \( T \) etapas. Formalmente, se define mediante los siguientes elementos:
+
+\textbf{Horizonte temporal}: \( t = 1, 2, \dots, T \) Momentos discretos en los que se toman decisiones. Cada etapa t corresponde a un subproblema.
+\newline
+\textbf{Estado del sistema $s_t$ $\in$ $S_t$}: Describe la situación del sistema al inicio de la etapa 
+t. El estado $s_t$ resume toda la información relevante para tomar decisiones futuras. $S_t$ es el espacio de estados en la etapa 
+t.
+\newline
+\textbf{Decisión o control}: \( x_t \in X_t(s_t) \), donde \( X_t(s_t) \) es el conjunto de decisiones factibles en el estado \( s_t \)
+\newline
+\textbf{Función de transición}: \( s_{t+1} = g_t(s_t, x_t) \), determina como evoluciona el sistema al tomar decisión $x_t$ en el estado $s_t$.
+- **Costo inmediato**: \( c_t(x_t, u_t) \), costo incurrido en la etapa \( t \)
+- **Costo terminal**: \( V_{T+1}(x_{T+1}) \), costo asociado al estado final (usualmente 0)
+
+El objetivo es encontrar una política \( \pi = (u_1, u_2, \dots, u_T) \) que minimice el costo total esperado:
+
+\[
+J_\pi(x_1) = \sum_{t=1}^{T} c_t(x_t, u_t) + V_{T+1}(x_{T+1})
+\]
+\end{definition}
+\begin{definition}[Ecuación de Bellman]
+Para un problema de optimización en etapas, la ecuación de Bellman establece:
+\begin{equation}
+V_t(x_t) = \min_{u_t \in U_t} \left[ c_t(x_t, u_t) + V_{t+1}(f_t(x_t, u_t)) \right]
+\end{equation}
+donde $V_t(x_t)$ es la función valor en el estado $x_t$ en el tiempo $t$, $u_t$ es la decisión, y $c_t$ es el costo inmediato.
+\end{definition}
+
+Este principio permite descomponer el problema de $N$ periodos en una secuencia de problemas más simples, cada uno dependiente solamente del estado del sistema (nivel de inventario) y las decisiones futuras.
+
+\subsection{Optimización Convexa y Estructuras Especiales}
+
+Aunque el problema de Wagner-Whitin incluye costos fijos (no convexos), la estructura especial del problema permite encontrar soluciones óptimas globales.
+
+\begin{definition}[Función Convexa]
+Una función $f: \mathbb{R}^n \rightarrow \mathbb{R}$ es convexa si para todo $x, y \in \mathbb{R}^n$ y $\lambda \in [0,1]$:
+\begin{equation}
+f(\lambda x + (1-\lambda)y) \leq \lambda f(x) + (1-\lambda)f(y)
+\end{equation}
+\end{definition}
+
+\begin{definition}[Función Cóncava]
+Una función $f: \mathbb{R}^n \rightarrow \mathbb{R}$ es cóncava si $-f$ es convexa.
+\end{definition}
+
+\begin{theorem}[Optimalidad en Problemas Convexos]
+En un problema de minimización convexa, todo mínimo local es global.
+\end{theorem}
+
+La formulación de Wagner-Whitin, aunque no completamente convexa debido a los costos fijos, exhibe propiedades estructurales que garantizan la optimalidad global de la solución encontrada.
+
+\subsection{Planificación Horizontale}
+
+Un concepto fundamental introducido por Wagner y Whitin es el de \textit{horizonte de planificación}, que permite dividir el problema en subproblemas independientes.
+
+\begin{definition}[Horizonte de Planificación]
+Un periodo $t$ constituye un horizonte de planificación si la solución óptima para los primeros $t$ periodos es independiente de los datos de demanda y costos más allá del periodo $t$.
+\end{definition}
+
+\begin{definition}[Propiedad de Extensibilidad]
+Un problema de planificación posee la propiedad de extensibilidad si la solución óptima para un horizonte $T$ puede extenderse a un horizonte $T+1$ sin modificar las decisiones anteriores.
+\end{definition}
+
+Este concepto tiene implicaciones prácticas significativas, pues permite tomar decisiones óptimas sin conocer el futuro completo.
+
+\section{Modelo Matemático y Preliminares}
+
+\subsection{Definición Formal del Problema}
+Considérese un horizonte de planificación discreto de $N$ periodos. En cada periodo $t = 1, 2, \ldots, N$, se definen los siguientes parámetros y variables:
+
+\begin{itemize}
+    \item $d_t$: demanda en el periodo $t$
+    \item $s_t$: costo de setup (ordenar o producir) en el periodo $t$
+    \item $h_t$: costo de mantener una unidad en inventario del periodo $t$ al $t+1$
+    \item $x_t$: cantidad a ordenar (o producir) en el periodo $t$
+    \item $I_t$: inventario al final del periodo $t$
+\end{itemize}
+
+\begin{definition}[Problema de Dimensionamiento de Lotes con Demanda Dinámica]
+El objetivo es encontrar un programa de pedidos $\{x_t\}_{t=1}^N$ que minimice el costo total, sujeto a satisfacer toda la demanda, donde la función objetivo se expresa como:
+\begin{equation}
+\min \sum_{t=1}^N \left[ \delta(x_t) s_t + h_t I_t \right]
+\end{equation}
+sujeto a:
+\begin{align}
+I_t &= I_{t-1} + x_t - d_t \quad \forall t = 1, \ldots, N \\
+I_t &\geq 0 \quad \forall t \\
+x_t &\geq 0 \quad \forall t \\
+I_0 &= 0 \quad \text{(inventario inicial cero)}
+\end{align}
+donde $\delta(x_t)$ es una función indicadora que toma el valor 1 si $x_t > 0$ y 0 en caso contrario.
+\end{definition}
+
+\subsection{Formulación como Programación Entera Mixta}
+
+El problema puede formularse como un programa lineal entero mixto introduciendo variables binarias $y_t$ que indican si se realiza un pedido en el periodo $t$:
+
+\begin{align}
+\min & \sum_{t=1}^N \left[ s_t y_t + h_t I_t \right] \\
+\text{s.a.} & \quad I_t = I_{t-1} + x_t - d_t \quad \forall t \\
+& \quad x_t \leq M y_t \quad \forall t \\
+& \quad I_t \geq 0, \quad x_t \geq 0, \quad y_t \in \{0,1\} \quad \forall t
+\end{align}
+donde $M$ es una constante suficientemente grande (e.g., $M = \sum_{i=t}^N d_i$).
+
+\subsection{Formulación como Programación Dinámica}
+
+El problema puede formularse recursivamente mediante programación dinámica. Sea $f_t(I)$ el costo mínimo acumulado desde el periodo $t$ hasta el final, dado un inventario inicial $I$ al comienzo del periodo $t$:
+
+\begin{equation}
+f_t(I) = \min_{\substack{x_t \geq 0 \\ I + x_t \geq d_t}} \left[ h_{t-1} I + \delta(x_t) s_t + f_{t+1}(I + x_t - d_t) \right]
+\end{equation}
+
+con condición terminal:
+
+\begin{equation}
+f_{N+1}(I) = \begin{cases} 
+0 & \text{si } I = 0 \\
+\infty & \text{en otro caso}
+\end{cases}
+\end{equation}
+
+Aunque esta formulación es correcta, su implementación directa resulta computacionalmente costosa. Los teoremas fundamentales presentados a continuación permiten simplificar notablemente el problema.
+
+\section{Resultados del articulo base}
+
+Los siguientes teoremas, demostrados originalmente por Wagner y Whitin, establecen propiedades estructurales de la solución óptima que reducen drásticamente el espacio de búsqueda.
+
+\begin{theorem}[Propiedad de Regeneración o Cero-Inventario]
+Existe una solución óptima tal que para cada periodo $t$ se cumple $I_{t-1} \cdot x_t = 0$. Es decir, nunca se ordena y se tiene inventario positivo simultáneamente.
+\end{theorem}
+
+\begin{proof}
+Supóngase una solución óptima donde para algún periodo $t$ se tiene $I_{t-1} > 0$ y $x_t > 0$. Consideremos una solución alternativa donde se reduce el pedido del periodo anterior en $\Delta > 0$ y se aumenta el pedido del periodo $t$ en la misma cantidad. El cambio en el costo sería:
+\[
+\Delta C = -h_{t-1} \Delta + \delta(x_{t-1} - \Delta) s_{t-1} - \delta(x_{t-1}) s_{t-1}
+\]
+Para $\Delta$ suficientemente pequeño, si $x_{t-1} - \Delta > 0$, entonces $\Delta C = -h_{t-1} \Delta < 0$, contradiciendo la optimalidad. Si $x_{t-1} - \Delta = 0$, entonces $\Delta C = -s_{t-1} - h_{t-1} \Delta < 0$, nuevamente una contradicción. Por lo tanto, debe cumplirse $I_{t-1} \cdot x_t = 0$.
+\end{proof}
+
+\begin{theorem}[Patrón de Pedidos o Satisfacción Exacta de Demanda]
+Existe una solución óptima tal que cada pedido $x_t$ cubre exactamente la demanda de un número entero de periodos consecutivos. Formalmente, para cada $t$ con $x_t > 0$, existe $k \geq t$ tal que:
+\begin{equation}
+x_t = \sum_{j=t}^k d_j
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Directa del Teorema 1. Si un pedido no satisface exactamente la demanda de periodos consecutivos, existiría algún periodo intermedio con inventario positivo y donde se realiza un pedido, violando la propiedad de regeneración.
+\end{proof}
+
+\begin{theorem}[Horizonte de Planificación]
+Si al resolver el problema para los primeros $t$ periodos se encuentra que el último pedido ocurre en el periodo $j^* \leq t$, entonces la solución óptima para el problema completo puede obtenerse concatenando la solución óptima para los primeros $j^*-1$ periodos (considerados independientemente) con la solución para los periodos restantes.
+\end{theorem}
+
+\begin{proof}
+Sea $F(t)$ el costo mínimo para los primeros $t$ periodos. Por la propiedad de regeneración, existe un último periodo de pedido $j^* \leq t$ que satisface la demanda hasta $t$. El costo total sería $F(j^*-1) + s_{j^*} + \sum_{k=j^*}^{t-1} \sum_{l=k+1}^t h_l d_k$. Si este es el mínimo global para el subproblema de $t$ periodos, cualquier extensión a periodos futuros no modificará la optimalidad de esta decisión para los primeros $j^*-1$ periodos.
+\end{proof}
+
+\begin{corollary}[Formulación Recursiva Simplificada]
+El costo mínimo para los primeros $t$ periodos puede expresarse como:
+\begin{equation}
+F(t) = \min_{0 \leq j \leq t} \left[ F(j) + s_{j+1} + \sum_{k=j+1}^{t-1} \sum_{l=k+1}^t h_l d_k \right]
+\end{equation}
+con $F(0) = 0$.
+\end{corollary}
+
+\section{Algoritmo Wagner-Whitin}
+
+Los teoremas anteriores permiten formular un algoritmo forward que resuelve el problema de manera eficiente.
+
+\subsection{Formulación Recursiva}
+
+Sea $F(t)$ el costo mínimo para los primeros $t$ periodos, con $F(0) = 0$. Entonces:
+
+\begin{equation}
+F(t) = \min_{0 \leq j < t} \left[ F(j) + s_{j+1} + \sum_{k=j+1}^{t-1} \sum_{l=k+1}^t h_l d_k \right]
+\end{equation}
+
+donde el término $\sum_{k=j+1}^{t-1} \sum_{l=k+1}^t h_l d_k$ representa el costo de mantener el inventario necesario para satisfacer las demandas de los periodos $k = j+1, \ldots, t-1$ hasta sus respectivos periodos de consumo.
+
+\subsection{Descripción del Algoritmo}
+
+\begin{algorithm}
+\caption{Algoritmo Wagner-Whitin}
+\begin{algorithmic}[1]
+\Require Demandas $d_t$, costos de setup $s_t$, costos de mantener $h_t$ para $t=1,\ldots,N$
+\Ensure Política óptima de pedidos y costo total mínimo
+\State Inicializar $F(0) = 0$, $P(0) = 0$ \Comment{$P(t)$ almacena el último periodo de pedido}
+\For{$t = 1$ to $N$}
+    \State $F(t) \gets \infty$
+    \For{$j = 0$ to $t-1$}
+        \State $costo \gets F(j) + s_{j+1} + \sum_{k=j+1}^{t-1} \sum_{l=k+1}^t h_l d_k$
+        \If{$costo < F(t)$}
+            \State $F(t) \gets costo$
+            \State $P(t) \gets j$ \Comment{El próximo pedido cubre de $j+1$ a $t$}
+        \EndIf
+    \EndFor
+\EndFor
+\State Reconstruir política óptima mediante backtracking usando $P(t)$
+\State \Return $F(N)$, política óptima
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Complejidad Computacional y Optimizaciones}
+
+El algoritmo básico requiere evaluar $O(N^2)$ posibles combinaciones $(j,t)$, con cada evaluación con costo $O(N)$, resultando en una complejidad total de $O(N^3)$. 
+
+\begin{theorem}[Complejidad Mejorada]
+Es posible implementar el algoritmo Wagner-Whitin con complejidad $O(N^2)$ mediante precomputación de costos de mantenimiento.
+\end{theorem}
+
+\begin{proof}
+Definiendo $H(j,t) = \sum_{k=j}^{t-1} \sum_{l=k+1}^t h_l d_k$, podemos precomputar estos valores en $O(N^2)$ usando:
+\[
+H(j,t) = H(j,t-1) + d_{t-1} \sum_{l=t}^t h_l \quad \text{para } j < t
+\]
+con $H(j,j) = 0$.
+\end{proof}
+
+\section{Ejemplo}
+
+Considérese el ejemplo original de Wagner-Whitin con $N = 12$ periodos, costos de setup $s_t$ variables, demandas $d_t$ variables, y costo de mantenimiento $h_t = 1$ para todo $t$. Los datos se presentan en la Tabla 1.
+
+\begin{table}[h]
+\centering
+\caption{Datos del problema de 12 periodos}
+\begin{tabular}{cccc}
+\toprule
+Mes $t$ & Demanda $d_t$ & Costo Setup $s_t$ \\
+\midrule
+1 & 69 & 85 \\
+2 & 29 & 102 \\
+3 & 36 & 102 \\
+4 & 61 & 101 \\
+5 & 61 & 98 \\
+6 & 26 & 114 \\
+7 & 34 & 105 \\
+8 & 67 & 86 \\
+9 & 45 & 119 \\
+10 & 67 & 110 \\
+11 & 79 & 98 \\
+12 & 56 & 114 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+La aplicación del algoritmo produce la política óptima:
+\begin{itemize}
+    \item Ordenar en periodo 1: $x_1 = 69 + 29 = 98$
+    \item Ordenar en periodo 3: $x_3 = 36 + 61 = 97$
+    \item Ordenar en periodo 5: $x_5 = 61 + 26 + 34 = 121$
+    \item Ordenar en periodo 8: $x_8 = 67 + 45 = 112$
+    \item Ordenar en periodo 10: $x_{10} = 67$
+    \item Ordenar en periodo 11: $x_{11} = 79 + 56 = 135$
+\end{itemize}
+
+El costo total óptimo es $F(12) = 864$.
+
+\
+
+El marco teórico establecido -basado en programación dinámica, optimización y teoría de inventarios- proporciona fundamentos sólidos para comprender tanto el algoritmo especí
+
+
+
+\section*{Referencias}
+
+\bibliographystyle{plain}
+\begin{thebibliography}{9}
+
+\bibitem{wagner1958dynamic}
+Wagner, H. M. \& Whitin, T. M. (1958). Dynamic Version of the Economic Lot Size Model. \emph{Management Science}, 5(1), 89-96.
+
+\bibitem{aksoy2024robust}
+Aksoy, A. \& Küçükyavuz, S. (2024). Robust Lot-Sizing Problems with Uncertain Costs. \emph{Optimization Letters}, 18(3), 543-567.
+
+\bibitem{bellman1957dynamic}
+Bellman, R. (1957). \emph{Dynamic Programming}. Princeton University Press.
+
+\bibitem{bravo2023stochastic}
+Bravo, F. \& Vidal, C. J. (2023). Stochastic Lot-Sizing: Recent Advances and Future Directions. \emph{European Journal of Operational Research}, 305(2), 501-520.
+
+\end{thebibliography}
+
+\end{document}
