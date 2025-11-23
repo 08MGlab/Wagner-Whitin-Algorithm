@@ -10,7 +10,7 @@
 Implementación en Python del algoritmo Wagner-Whitin para la solución óptima del problema de dimensionamiento de lotes con demanda dinámica y determinística. Este proyecto incluye:
 
 - 📄 **Artículo académico** completo en español que explica los fundamentos teóricos
-- ⚡ **Implementación eficiente** del algoritmo en Python
+- ⚡ **Implementación** del algoritmo en Python
 - 📊 **Ejemplos numéricos** y análisis de complejidad computacional
 - 🧮 **Formulaciones matemáticas** con programación dinámica y optimización convexa
 
